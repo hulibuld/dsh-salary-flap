@@ -14,7 +14,7 @@
 
 它是 DSH 的 client 插件（bundle 形态），装在 `desktop` profile 里。两种装法选一个：
 
-**从 npm 装**（已经发布在 [dsh-salary-flap](https://www.npmjs.com/package/dsh-salary-flap)）：
+**从 npm 装**（包名 `dsh-salary-flap`；npm 页面刚发布时可能还没索引出来，装不上就先用下面第二种）：
 
 ```
 plugin_manager → action: install_bundle → target: dsh-salary-flap
