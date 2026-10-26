@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "title": "工资跳板",
+    "description": "挂在界面右下的翻牌看板：填月薪、每日工时、每月工作天数与上班时间，每 2 秒结算一次今天已经赚了多少钱。"
+  },
+  "app": {
+    "title": "工资跳板",
+    "subtitle": "每 2 秒结算一次，只算今天",
+    "earnedLabel": "今日已赚",
+    "hourlyLabel": "时薪",
+    "dailyLabel": "日薪",
+    "progressLabel": "今日进度",
+    "dragHint": "按住顶部可拖动"
+  },
+  "line": {
+    "summary": "时薪 {hourly} · 今日进度 {progress}%"
+  },
+  "status": {
+    "before": "还没上班",
+    "beforeEta": "还没上班 · 还有 {eta}开工",
+    "working": "正在赚",
+    "after": "今天收工了",
+    "afterEta": "今天收工了 · {eta}后开工"
+  },
+  "eta": {
+    "minutes": "{n} 分钟",
+    "hourOnly": "{n} 小时",
+    "hours": "{n} 小时 {m} 分"
+  },
+  "setup": {
+    "title": "填一下你的工资参数",
+    "monthlyLabel": "月薪",
+    "hoursLabel": "每天工作",
+    "daysLabel": "每月工作天数",
+    "startLabel": "上班时间"
+  },
+  "unit": {
+    "yuan": "元",
+    "hour": "小时",
+    "day": "天",
+    "percent": "%"
+  },
+  "button": {
+    "start": "开始跳",
+    "save": "保存",
+    "apply": "应用",
+    "cancel": "取消",
+    "settings": "设置",
+    "popout": "弹到桌面",
+    "theme": "配色",
+    "lang": "语言",
+    "dock": "收到顶栏",
+    "undock": "展开工资跳板"
+  },
+  "theme": {
+    "mono": "黑白灰",
+    "green": "护眼绿",
+    "wood": "原木黄",
+    "sky": "天空浅蓝",
+    "night": "暗夜黑",
+    "sakura": "樱雾粉"
+  },
+  "toast": {
+    "popped": "已弹到桌面，可拖到任何地方",
+    "noElectron": "这个环境弹不出独立窗口"
+  },
+  "error": {
+    "invalidNumber": "请输入大于 0 的数字",
+    "invalidTime": "时间格式不对，应形如 09:00"
+  }
+}

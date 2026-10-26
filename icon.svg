@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" role="img" aria-label="Salary Flap">
+  <title>Salary Flap</title>
+  <defs>
+    <clipPath id="dsh-salary-flap-top"><rect x="0" y="0" width="24" height="11.7"/></clipPath>
+    <clipPath id="dsh-salary-flap-bottom"><rect x="0" y="12.3" width="24" height="11.7"/></clipPath>
+  </defs>
+  <!-- 翻牌底座：上下两张半牌，中间留一条真接缝 -->
+  <path d="M1.6 11.7V7.2A4.6 4.6 0 0 1 6.2 2.6h11.6a4.6 4.6 0 0 1 4.6 4.6v4.5z" fill="currentColor" fill-opacity="0.14" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M1.6 12.3h20.8v4.5a4.6 4.6 0 0 1-4.6 4.6H6.2a4.6 4.6 0 0 1-4.6-4.6z" fill="currentColor" fill-opacity="0.06" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+  <!-- ¥ 被接缝切成上下两半，暗示翻牌 -->
+  <g clip-path="url(#dsh-salary-flap-top)" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+    <path d="M8.5 6.3 12 10.9 15.5 6.3"/>
+    <path d="M12 10.9v1.2"/>
+  </g>
+  <g clip-path="url(#dsh-salary-flap-bottom)" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+    <path d="M12 11.2v7.2"/>
+    <path d="M8.9 14h6.2"/>
+    <path d="M8.9 16.6h6.2"/>
+  </g>
+</svg>

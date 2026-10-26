@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="zh" data-theme="mono">
+<head>
+<meta charset="utf-8" />
+<title>工资跳板</title>
+<style>
+  /*
+    单文件、零外部依赖、纯内联脚本。
+    为什么不用 type="module" 的脚本标签：窗口是用 file:// 加载的，
+    ES module 在 file:// 下会被 CORS 直接拦掉（模块脚本按源校验），
+    页面会白屏而且没有任何报错可看 —— 对 IT 小白等于「点了没反应」。
+  */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* 六套配色，色值与主看板逐个对齐；窗口默认 mono。 */
+  html { --sf-bg:#17181a; --sf-slat:#24262a; --sf-text:#f3f4f6; --sf-accent:#8b9198; --sf-border:#313438; --sf-muted:#9aa0a6; }
+  html[data-theme="mono"]   { --sf-bg:#17181a; --sf-slat:#24262a; --sf-text:#f3f4f6; --sf-accent:#8b9198; --sf-border:#313438; --sf-muted:#9aa0a6; }
+  html[data-theme="green"]  { --sf-bg:#14251a; --sf-slat:#1d3325; --sf-text:#d8f2dd; --sf-accent:#6ecf8d; --sf-border:#2a4233; --sf-muted:#8fb99c; }
+  html[data-theme="wood"]   { --sf-bg:#26201a; --sf-slat:#352c23; --sf-text:#f5e6cd; --sf-accent:#d9a86c; --sf-border:#463a2d; --sf-muted:#b8a488; }
+  html[data-theme="sky"]    { --sf-bg:#eaf2fa; --sf-slat:#ffffff; --sf-text:#22374d; --sf-accent:#4a90d9; --sf-border:#cfe0f0; --sf-muted:#6b8399; }
+  html[data-theme="night"]  { --sf-bg:#0b0c0e; --sf-slat:#16181c; --sf-text:#eef0f3; --sf-accent:#4a5560; --sf-border:#23262b; --sf-muted:#7c848d; }
+  html[data-theme="sakura"] { --sf-bg:#2a1f22; --sf-slat:#3a2b30; --sf-text:#fbe9ee; --sf-accent:#f2a0b5; --sf-border:#4a363c; --sf-muted:#c3a0aa; }
+
+  html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
+  body {
+    font-family: -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    /* 整窗可拖 —— 这是「能把看板拖到 DSH 窗口外面」的关键；
+       按钮必须单独 no-drag，否则点在按钮上变成拖窗口。 */
+    -webkit-app-region: drag;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: default;
+  }
+
+  .card {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column; justify-content: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: var(--sf-bg);
+    border: 1px solid var(--sf-border);
+    color: var(--sf-text);
+  }
+
+  .head { display: flex; align-items: center; justify-content: space-between; }
+  .label { font-size: 10px; letter-spacing: .1em; color: var(--sf-muted); }
+  .close {
+    -webkit-app-region: no-drag;
+    width: 14px; height: 14px; padding: 0; border: 0; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; color: var(--sf-muted);
+    font-size: 12px; line-height: 1; cursor: pointer;
+  }
+  .close:hover { color: var(--sf-text); background: color-mix(in oklab, var(--sf-slat) 65%, var(--sf-muted) 35%); }
+
+  /* 金额行 = 一整块凹陷的翻牌窗（与主看板同款）。字号决定牌面尺寸（牌宽高都是 em）。 */
+  .money {
+    display: flex; align-items: center; justify-content: center; gap: .04em;
+    font-size: 34px; overflow: hidden;
+    margin: 8px 0 9px;
+    padding: 6px 7px 7px;
+    border-radius: 9px;
+    background: color-mix(in oklab, var(--sf-bg) 62%, #000);
+    box-shadow:
+      inset 0 2px 7px rgba(0, 0, 0, .62),
+      inset 0 -1px 0 rgba(255, 255, 255, .06);
+  }
+
+  /* ---- 翻牌牌面：结构与主看板一致 ---- */
+  .sf-slat {
+    --sf-w: .78em;
+    --sf-h: 1.22em;
+    display: inline-block; position: relative;
+    width: var(--sf-w); height: var(--sf-h);
+    border-radius: 4px;
+    background: var(--sf-slat);
+    perspective: 420px;
+    flex: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .45);
+  }
+  /* ¥ 与小数点占窄格 */
+  .sf-slat.is-tight { --sf-w: .46em; }
+  /* 中缝：翻牌器真正的那道横线，上沿带一道反光 */
+  .sf-slat::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px;
+    margin-top: -1px; z-index: 3; pointer-events: none;
+    background: rgba(0, 0, 0, .62);
+    box-shadow: 0 -1px 0 rgba(255, 255, 255, .1);
+  }
+  /* 补位的空格槽只占宽度，不画牌面 */
+  .sf-slat.is-blank { background: transparent; box-shadow: none; }
+  .sf-slat.is-blank::after { display: none; }
+
+  .sf-half, .sf-flip {
+    position: absolute; left: 0; right: 0; height: 50%;
+    overflow: hidden;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    background: var(--sf-slat);
+  }
+  .sf-slat.is-blank .sf-half, .sf-slat.is-blank .sf-flip { background: transparent; }
+  /* 空槽连上下两页的明暗渐变也不能画，否则透明牌会变成两块黑块 */
+  .sf-slat.is-blank .sf-half::after, .sf-slat.is-blank .sf-flip::after { display: none; }
+
+  .sf-half--top, .sf-flip--top { top: 0; border-radius: 4px 4px 0 0; }
+  .sf-half--bottom, .sf-flip--bottom { bottom: 0; border-radius: 0 0 4px 4px; }
+
+  /* 上下两页各自压一道渐变，模拟真牌面的明暗落差 */
+  .sf-half--top::after, .sf-flip--top::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(to bottom, rgba(255,255,255,.05), rgba(0,0,0,.22));
+  }
+  .sf-half--bottom::after, .sf-flip--bottom::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(to bottom, rgba(0,0,0,.28), rgba(255,255,255,.03));
+  }
+
+  .sf-glyph {
+    position: absolute; left: 0; right: 0; height: 200%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9em; line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .sf-half--top .sf-glyph, .sf-flip--top .sf-glyph { top: 0; }
+  .sf-half--bottom .sf-glyph, .sf-flip--bottom .sf-glyph { bottom: 0; }
+
+  /* 翻动层：上半页铰链在下沿（翻上去），下半页铰链在上沿（翻下来） */
+  .sf-flip--top { transform-origin: bottom center; transform: rotateX(0deg); z-index: 3; }
+  .sf-flip--bottom { transform-origin: top center; transform: rotateX(90deg); z-index: 2; }
+
+  @keyframes sf-fold {
+    from { transform: rotateX(0deg); filter: brightness(1); }
+    to   { transform: rotateX(-90deg); filter: brightness(.45); }
+  }
+  /* 末段 -6° 回弹：机械牌落定时的那一下 */
+  @keyframes sf-unfold {
+    0%   { transform: rotateX(90deg); filter: brightness(.45); }
+    78%  { transform: rotateX(-6deg); filter: brightness(.95); }
+    100% { transform: rotateX(0deg); filter: brightness(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sf-flip { display: none !important; }
+    .bar > i { transition: none; }
+  }
+
+  .foot {
+    display: flex; align-items: baseline; justify-content: space-between;
+    font-size: 10px; color: var(--sf-muted);
+  }
+  .foot b { color: var(--sf-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .bar {
+    height: 3px; border-radius: 2px; overflow: hidden;
+    background: color-mix(in oklab, var(--sf-slat) 82%, transparent);
+  }
+  .bar > i {
+    display: block; height: 100%; width: 0%;
+    border-radius: 2px; background: var(--sf-accent);
+    transition: width .4s ease;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="head">
+      <span class="label">今日已赚</span>
+      <button class="close" id="close" type="button" title="关闭">×</button>
+    </div>
+    <div class="money" id="money"></div>
+    <div class="foot">
+      <span>时薪 <b id="hourly">¥0.00</b></span>
+      <span id="status">还没上班</span>
+    </div>
+    <div class="bar"><i id="progress"></i></div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* 下面这段纯函数是从 client.js 的 calc 逐行镜像过来的（只取窗口要显示的字段）。
+     为什么不自己写公式：主看板和这个浮窗必须算出同一个数，
+     两套口径差一分钟，用户就会认为插件坏了。 */
+  /* SF-WIN-CALC-BEGIN */
+  function clampNum(value, min, max) {
+    var n = Number(value);
+    if (!isFinite(n)) return min;
+    if (n < min) return min;
+    if (n > max) return max;
+    return n;
+  }
+
+  /* 两位小数「截断」而不是四舍五入：钱只许少不许虚高，且截断不会让 170.449 显示成 170.45 */
+  function trunc2(value) {
+    var n = Number(value);
+    if (!isFinite(n)) return 0;
+    var t = Math.floor(Math.abs(n) * 100 + 1e-9) / 100;
+    // -0 会被 toFixed 打成 "-0.00"，这里归零
+    return n < 0 && t !== 0 ? -t : t;
+  }
+
+  function parseHHMM(value) {
+    var m = /^(\d{1,2}):(\d{2})$/.exec(String(value == null ? '' : value));
+    if (!m) return null;
+    var hh = parseInt(m[1], 10);
+    var mm = parseInt(m[2], 10);
+    if (!(hh >= 0 && hh <= 23) || !(mm >= 0 && mm <= 59)) return null;
+    return { hh: hh, mm: mm };
+  }
+
+  function calc(settings, now) {
+    var s = settings || {};
+    var monthly = Number(s.monthly);
+    var hours = Number(s.hours);
+    var days = Number(s.days);
+    var start = parseHHMM(s.start);
+    var empty = { earned: 0, dailyWage: 0, hourly: 0, progress: 0, phase: 'before' };
+    // 参数不合法就给全 0，而不是 NaN：屏幕上出现 NaN 比显示 0 更吓人
+    if (!isFinite(monthly) || monthly <= 0) return empty;
+    if (!isFinite(hours) || hours <= 0 || hours > 24) return empty;
+    if (!isFinite(days) || days < 1 || days > 31) return empty;
+    if (!start) return empty;
+
+    var dailyWage = monthly / days;
+    var hourly = dailyWage / hours;
+    var totalMs = hours * 3600000;
+
+    var date = now instanceof Date ? now : new Date(now);
+    var nowMs = date.getTime();
+    var todayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), start.hh, start.mm).getTime();
+    var prevStart = todayStart - 86400000;
+
+    // 班次跨过午夜（例如 22:00 上 8 小时）：此时「今天几点上班」对应的其实是昨晚
+    var startMs = (start.hh * 60 + start.mm) * 60000;
+    var crossMidnight = startMs + totalMs > 1440 * 60000;
+    var shiftStart = todayStart;
+    if (crossMidnight && nowMs < todayStart && nowMs >= prevStart) {
+      shiftStart = prevStart;
+    }
+
+    var raw = nowMs - shiftStart;
+    var elapsed = clampNum(raw, 0, totalMs);
+    var progress = totalMs > 0 ? elapsed / totalMs : 0;
+    var phase = raw < 0 ? 'before' : (raw >= totalMs ? 'after' : 'working');
+    var earned = dailyWage * progress;
+    return { earned: earned, dailyWage: dailyWage, hourly: hourly, progress: progress, phase: phase };
+  }
+
+  var INT_SLOT_COUNT = 4;
+  var STAGGER_MS = 30;
+  var MAX_STAGGER_STEPS = 4;
+
+  function isDigit(ch) {
+    return typeof ch === 'string' && ch.length === 1 && ch >= '0' && ch <= '9';
+  }
+
+  /* 右对齐补空槽；位数超过格数时返回原样（不裁最高位，宁可挤出去） */
+  function slotify(text, count) {
+    var chars = String(text).split('');
+    if (chars.length >= count) return chars;
+    var out = [];
+    for (var i = 0; i < count - chars.length; i++) out.push('');
+    return out.concat(chars);
+  }
+
+  /* 固定 8 格：['¥', 4 个整数位, '.', 2 个小数位]（日薪上限按 ¥9999.99 算）。
+     定长是为了防抖动 —— 金额进位时牌面位置不动，眼睛才不用重新找。 */
+  function moneySlots(amount) {
+    var n = trunc2(amount);
+    var text = Math.abs(n).toFixed(2);
+    var dot = text.indexOf('.');
+    var intText = text.slice(0, dot);
+    var decText = text.slice(dot + 1);
+    var out = ['¥'].concat(slotify(intText, INT_SLOT_COUNT));
+    out.push('.');
+    out.push(decText.charAt(0) || '0');
+    out.push(decText.charAt(1) || '0');
+    return out;
+  }
+
+  /* 只挑「变了、且新值确实是数字」的位去翻：¥ 和 . 不翻，空槽变数字才翻 */
+  function changedSlots(prev, next) {
+    var out = [];
+    for (var i = 0; i < next.length; i++) {
+      if (prev[i] !== next[i] && isDigit(next[i])) out.push(i);
+    }
+    return out;
+  }
+
+  /* 越靠右的位越先停：右边先翻完，左边再翻，视觉上像整行在滚动 */
+  function delayOf(slots, index) {
+    var after = 0;
+    for (var i = index + 1; i < slots.length; i++) {
+      if (isDigit(slots[i])) after++;
+    }
+    return Math.min(after, MAX_STAGGER_STEPS) * STAGGER_MS;
+  }
+  /* SF-WIN-CALC-END */
+
+  var PREFIX = '/plugins/dsh-salary-flap';
+  var TICK_MS = 2000;
+  var FLAP_MS = 420;
+  var HALF_MS = 210;
+
+  var state = { settings: null, theme: 'mono', lang: 'zh', origin: '' };
+  var prevSlots = [];
+  var timer = null;
+
+  function el(id) { return document.getElementById(id); }
+
+  function reducedMotion() {
+    try {
+      return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /* Host 通过 loadFile(..., {hash}) 把状态塞在 # 后面；hash 里是 encodeURIComponent 过的 JSON */
+  function readHash() {
+    try {
+      var raw = location.hash ? location.hash.slice(1) : '';
+      if (!raw) return;
+      var data = JSON.parse(decodeURIComponent(raw));
+      if (!data || typeof data !== 'object') return;
+      state.settings = data.settings && typeof data.settings === 'object' ? data.settings : state.settings;
+      state.theme = typeof data.theme === 'string' ? data.theme : state.theme;
+      state.lang = typeof data.lang === 'string' ? data.lang : state.lang;
+      state.origin = typeof data.origin === 'string' ? data.origin : state.origin;
+    } catch (e) {
+      /* hash 坏了就沿用上一次的状态，窗口照常显示，不白屏 */
+    }
+  }
+
+  function applyTheme() {
+    var theme = state.theme;
+    var ok = ['mono', 'green', 'wood', 'sky', 'night', 'sakura'];
+    if (ok.indexOf(theme) < 0) theme = 'mono';
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+
+  function glyphHalf(cls, text) {
+    var div = document.createElement('span');
+    div.className = cls;
+    var glyph = document.createElement('span');
+    glyph.className = 'sf-glyph';
+    glyph.textContent = text;
+    div.appendChild(glyph);
+    return div;
+  }
+
+  /**
+   * 造一块牌。
+   * 四层角色（照抄主看板，这里最容易搞反）：
+   *   静止上半 = 新值；静止下半 = 翻动期放旧值、静止时就是当前值；
+   *   翻动上半 = 旧值，绕下沿翻到 -90°；翻动下半 = 新值，从 +90° 翻回来。
+   */
+  function slatEl(ch, prevCh, changed, delay, tight) {
+    var slat = document.createElement('span');
+    slat.className = 'sf-slat' + (ch === '' ? ' is-blank' : '') + (tight ? ' is-tight' : '');
+    slat.appendChild(glyphHalf('sf-half sf-half--top', ch));
+    slat.appendChild(glyphHalf('sf-half sf-half--bottom', changed ? prevCh : ch));
+
+    if (changed) {
+      var flipTop = glyphHalf('sf-flip sf-flip--top', prevCh);
+      var flipBottom = glyphHalf('sf-flip sf-flip--bottom', ch);
+      // 上半先翻走（HALF_MS），下半再翻回来（再一个 HALF_MS），合起来正好 FLAP_MS
+      // 前半程加速下落、后半程带末段回弹（曲线在 keyframes 里定，这里只给时长与延迟）
+      flipTop.style.animation = 'sf-fold ' + HALF_MS + 'ms cubic-bezier(.45,0,.9,.45) ' + delay + 'ms forwards';
+      flipBottom.style.animation = 'sf-unfold ' + HALF_MS + 'ms cubic-bezier(.2,.9,.3,1) ' + (delay + HALF_MS) + 'ms forwards';
+      slat.appendChild(flipTop);
+      slat.appendChild(flipBottom);
+    }
+    return slat;
+  }
+
+  function renderMoney(nextSlots, prev) {
+    var row = el('money');
+    if (!row) return;
+    var changed = prev.length ? changedSlots(prev, nextSlots) : [];
+    // 关了动效就一个翻动层都不建（CSS 里也兜了一层 display:none，两处都做是为了
+    // 避免「动画被禁但 DOM 里还塞着几十个翻动层」这种看不出原因的卡顿）
+    if (reducedMotion()) changed = [];
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < nextSlots.length; i++) {
+      var isChanged = changed.indexOf(i) >= 0;
+      frag.appendChild(slatEl(
+        nextSlots[i],
+        prev[i] == null ? nextSlots[i] : prev[i],
+        isChanged,
+        isChanged ? delayOf(nextSlots, i) : 0,
+        i === 0 || i === INT_SLOT_COUNT + 1   // ¥ 与小数点占窄格
+      ));
+    }
+    // 整行重建：翻动层因此有确定的寿命（活到下一次 tick），不需要额外的 settle 定时器
+    row.replaceChildren(frag);
+  }
+
+  function tick() {
+    try {
+      var result = calc(state.settings, new Date());
+      var nextSlots = moneySlots(result.earned);
+      renderMoney(nextSlots, prevSlots);
+      prevSlots = nextSlots;
+
+      var hourlyEl = el('hourly');
+      if (hourlyEl) hourlyEl.textContent = '¥' + trunc2(result.hourly).toFixed(2);
+
+      var statusEl = el('status');
+      var pct = Math.round(clampNum(result.progress, 0, 1) * 100);
+      if (statusEl) {
+        statusEl.textContent = result.phase === 'before' ? '还没上班' : (result.phase === 'after' ? '今天收工了' : '今日进度 ' + pct + '%');
+      }
+      var barEl = el('progress');
+      if (barEl) barEl.style.width = pct + '%';
+    } catch (e) {
+      /* 一帧算错不许让整个窗口停摆：下一轮 2 秒后会自己恢复 */
+    }
+  }
+
+  function closeWindow() {
+    try { window.close(); } catch (e) { /* 交给下面的兜底 */ }
+    // window.close() 在个别打包形态下会被拦；再直接敲 Host 的 /close。
+    // 用 no-cors：这条只求「请求送到」，不读响应（file:// 读不到跨源响应）。
+    try {
+      if (state.origin) {
+        fetch(state.origin + PREFIX + '/close', { method: 'POST', mode: 'no-cors', keepalive: true }).catch(function () {});
+      }
+    } catch (e) { /* 连 fetch 都没有就算了，窗口还可以再点一次 × */ }
+  }
+
+  function start() {
+    readHash();
+    applyTheme();
+    tick();
+    if (timer) clearInterval(timer);
+    timer = setInterval(tick, TICK_MS);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var btn = el('close');
+    if (btn) btn.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      closeWindow();
+    });
+    // loadFile 只换 hash 时 Chromium 可能走「同文档导航」而不重新加载页面，
+    // 只听加载事件会一直显示旧状态，所以必须同时听 hashchange。
+    window.addEventListener('hashchange', function () {
+      readHash();
+      applyTheme();
+      tick();
+    });
+    window.addEventListener('beforeunload', function () {
+      if (timer) clearInterval(timer);
+    });
+    start();
+  });
+})();
+</script>
+</body>
+</html>

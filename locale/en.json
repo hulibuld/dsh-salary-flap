@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "title": "Salary Flap",
+    "description": "A split-flap board pinned to the bottom-right of the UI: enter your monthly salary, daily hours, working days per month and start time to see today's earnings settle every 2 seconds."
+  },
+  "app": {
+    "title": "Salary Flap",
+    "subtitle": "Settles every 2 seconds, today only",
+    "earnedLabel": "Earned today",
+    "hourlyLabel": "Hourly",
+    "dailyLabel": "Daily",
+    "progressLabel": "Today's progress",
+    "dragHint": "Drag the top edge to move"
+  },
+  "line": {
+    "summary": "¥{hourly}/h · {progress}% of today"
+  },
+  "status": {
+    "before": "Not started yet",
+    "beforeEta": "Not started · starts in {eta}",
+    "working": "Earning now",
+    "after": "Done for today",
+    "afterEta": "Done for today · next shift in {eta}"
+  },
+  "eta": {
+    "minutes": "{n} min",
+    "hourOnly": "{n} h",
+    "hours": "{n} h {m} min"
+  },
+  "setup": {
+    "title": "Set up your pay",
+    "monthlyLabel": "Monthly salary",
+    "hoursLabel": "Hours per day",
+    "daysLabel": "Working days per month",
+    "startLabel": "Start time"
+  },
+  "unit": {
+    "yuan": "CNY",
+    "hour": "h",
+    "day": "d",
+    "percent": "%"
+  },
+  "button": {
+    "start": "Start ticking",
+    "save": "Save",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "settings": "Settings",
+    "popout": "Pop out to desktop",
+    "theme": "Theme",
+    "lang": "Language",
+    "dock": "Minimize to top bar",
+    "undock": "Show the board"
+  },
+  "theme": {
+    "mono": "Mono",
+    "green": "Reading green",
+    "wood": "Wood",
+    "sky": "Sky",
+    "night": "Night",
+    "sakura": "Sakura"
+  },
+  "toast": {
+    "popped": "Popped out — drag it anywhere",
+    "noElectron": "This environment cannot open a window"
+  },
+  "error": {
+    "invalidNumber": "Enter a number greater than 0",
+    "invalidTime": "Time must look like 09:00"
+  }
+}

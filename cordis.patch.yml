@@ -1,0 +1,4 @@
+# 工资跳板：一块挂在 Web UI 上的翻牌工资看板。
+- insert:
+    - id: salary-flap
+      name: '@local/dsh-salary-flap'
